@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>TP Système Solaire</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link type="text/css" rel="stylesheet" href="main.css">
+</head>
+
+<body>
+
+	<div id="container"></div>
+
+	<script type="module">
+
+
+		// Début des imports
+		import * as THREE from '../build/three.module.js';
+		import { FirstPersonControls } from './jsm/controls/FirstPersonControls.js';
+		// Fin des imports
+
+
+		// Début des variables
+		let camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 10000);
+		let scene = new THREE.Scene();
+		let renderer = new THREE.WebGLRenderer();
+		const clock = new THREE.Clock();
+		let sun, mercure, venus, earth, mars, jupiter, saturn, anneauS1, anneauS2, anneauS3, anneauS4, uranus, neptune, container, controls;
+		container = document.getElementById('container');
+		var r = 1250;
+		var theta = 0;
+		var dTheta = 2 * Math.PI / 1000;
+		// Fin des variables
+
+
+		init();
+		animate();
+
+		function init() {
+
+			camera.position.z = 4000;
+			camera.position.x = 600;
+			camera.position.y = 1000;
+
+			const textureSun = new THREE.TextureLoader().load('textures/8k_sun.jpg');
+			const textureMercure = new THREE.TextureLoader().load('textures/8k_mercury.jpg');
+			const textureVenus = new THREE.TextureLoader().load('textures/8k_venus_surface.jpg');
+			const textureEarth = new THREE.TextureLoader().load('textures/8k_earth.jpg');
+			const textureMars = new THREE.TextureLoader().load('textures/8k_mars.jpg');
+			const textureJupiter = new THREE.TextureLoader().load('textures/8k_jupiter.jpg');
+			const textureSaturn = new THREE.TextureLoader().load('textures/8k_saturn.jpg');
+			const textureanneauS = new THREE.TextureLoader().load('textures/anneaux.jpg');
+			const textureUranus = new THREE.TextureLoader().load('textures/2k_uranus.jpg');
+			const textureNeptune = new THREE.TextureLoader().load('textures/2k_neptune.jpg');
+
+			const geometrySun = new THREE.SphereGeometry(1000, 1000, 1000);
+			const geometryMercure = new THREE.SphereGeometry(15, 15, 15);
+			const geometryVenus = new THREE.SphereGeometry(40, 40, 40);
+			const geometryEarth = new THREE.SphereGeometry(40, 40, 40);
+			const geometryMars = new THREE.SphereGeometry(20, 20, 20);
+			const geometryJupiter = new THREE.SphereGeometry(300, 300, 300);
+			const geometrySaturn = new THREE.SphereGeometry(275, 275, 275);
+			const geometryAnneau1 = new THREE.RingGeometry(330, 370, 64, 1, 0, Math.PI * 2)
+			const geometryAnneau2 = new THREE.RingGeometry(371, 411, 64, 1, 0, Math.PI * 2)
+			const geometryAnneau3 = new THREE.RingGeometry(411, 471, 64, 1, 0, Math.PI * 2)
+			const geometryAnneau4 = new THREE.RingGeometry(472, 532, 64, 1, 0, Math.PI * 2)
+			const geometryUranus = new THREE.SphereGeometry(140, 140, 140);
+			const geometryNeptune = new THREE.SphereGeometry(140, 140, 140);
+
+			const materialSun = new THREE.MeshBasicMaterial({ map: textureSun, side: THREE.DoubleSide });
+			const materialMercure = new THREE.MeshBasicMaterial({ map: textureMercure, side: THREE.DoubleSide });
+			const materialVenus = new THREE.MeshBasicMaterial({ map: textureVenus, side: THREE.DoubleSide });
+			const materialEarth = new THREE.MeshBasicMaterial({ map: textureEarth, side: THREE.DoubleSide });
+			const materialMars = new THREE.MeshBasicMaterial({ map: textureMars, side: THREE.DoubleSide });
+			const materialJupiter = new THREE.MeshBasicMaterial({ map: textureJupiter, side: THREE.DoubleSide });
+			const materialSaturn = new THREE.MeshBasicMaterial({ map: textureSaturn, side: THREE.DoubleSide });
+			const materialAnneau1 = new THREE.MeshBasicMaterial( { color: 0x695c4e, side: THREE.DoubleSide });
+			const materialAnneau2 = new THREE.MeshBasicMaterial( { color: 0xbaa884, side: THREE.DoubleSide });
+			const materialUranus = new THREE.MeshBasicMaterial({ map: textureUranus, side: THREE.DoubleSide });
+			const materialNeptune = new THREE.MeshBasicMaterial({ map: textureNeptune, side: THREE.DoubleSide });
+
+			sun = new THREE.Mesh(geometrySun, materialSun);
+			mercure = new THREE.Mesh(geometryMercure, materialMercure);
+			venus = new THREE.Mesh(geometryVenus, materialVenus);
+			earth = new THREE.Mesh(geometryEarth, materialEarth);
+			mars = new THREE.Mesh(geometryMars, materialMars);
+			jupiter = new THREE.Mesh(geometryJupiter, materialJupiter);
+			saturn = new THREE.Mesh(geometrySaturn, materialSaturn);
+			anneauS1 = new THREE.Mesh(geometryAnneau1, materialAnneau1);
+			anneauS2 = new THREE.Mesh(geometryAnneau2, materialAnneau2);
+			anneauS3 = new THREE.Mesh(geometryAnneau3, materialAnneau1);
+			anneauS4 = new THREE.Mesh(geometryAnneau4, materialAnneau2);
+			uranus = new THREE.Mesh(geometryUranus, materialUranus);
+			neptune = new THREE.Mesh(geometryNeptune, materialNeptune);
+
+			scene.add(sun);
+			scene.add(mercure);
+			scene.add(venus);
+			scene.add(earth);
+			scene.add(mars);
+			scene.add(jupiter);
+			scene.add(saturn);
+			scene.add(anneauS1);
+			scene.add(anneauS2);
+			scene.add(anneauS3);
+			scene.add(anneauS4);
+			scene.add(uranus);
+			scene.add(neptune);
+
+			renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			container.appendChild(renderer.domElement);
+
+			controls = new FirstPersonControls(camera, renderer.domElement);
+
+			controls.movementSpeed = 1000;
+			controls.lookSpeed = 0.125;
+			controls.lookVertical = true;
+			controls.enabled = true;
+
+			window.addEventListener('resize', onWindowResize);
+
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+
+		}
+
+		function animate() {
+
+			requestAnimationFrame(animate);
+
+
+			renderer.render(scene, camera);
+
+			// partie rotation de planètes
+			sun.rotation.y += 0.009;
+			uranus.rotation.y -= 0.343;
+			mercure.rotation.y += 0.004;
+			jupiter.rotation.y += 0.583;
+			earth.rotation.y +=	0.243;
+			venus.rotation.y -=	0.001;
+			mars.rotation.y += 0.238;
+			neptune.rotation.y += 0.364;
+
+			//partie saturn
+			saturn.rotation.y += 0.555;
+			anneauS1.rotation.x = -80;
+			anneauS2.rotation.x = -80;
+			anneauS3.rotation.x = -80;
+			anneauS4.rotation.x = -80;
+			anneauS1.rotation.y = -75;
+			anneauS2.rotation.y = -75;
+			anneauS3.rotation.y = -75;
+			anneauS4.rotation.y = -75;
+			anneauS1.rotation.z -= 0.01;
+			anneauS2.rotation.z -= 0.01;
+			anneauS3.rotation.z -= 0.01;
+			anneauS4.rotation.z -= 0.01;
+
+
+			// partie rotation autour du soleil
+			theta += dTheta;
+			mercure.position.x = r * Math.cos(4.14*theta);
+			mercure.position.z = r * Math.sin(4.14*theta);
+			venus.position.x = 1.13 * r * Math.cos(1.6*theta);
+			venus.position.z = 1.13 * r * Math.sin(1.6*theta);
+			earth.position.x = 1.3 * r * Math.cos(theta);
+			earth.position.z = 1.3 * r * Math.sin(theta);
+			mars.position.x = 1.45 * r * Math.cos(0.5*theta);
+			mars.position.z = 1.45 * r * Math.sin(0.5*theta);
+			jupiter.position.x = 1.9 * r * Math.cos(0.08*theta);
+			jupiter.position.z = 1.9 * r * Math.sin(0.08*theta);
+			saturn.position.x = 2.8 * r * Math.cos(0.03*theta);
+			saturn.position.z = 2.8 * r * Math.sin(0.03*theta);
+			anneauS1.position.x = 2.8 * r * Math.cos(0.03*theta);
+			anneauS1.position.z = 2.8 * r * Math.sin(0.03*theta);
+			anneauS2.position.x = 2.8 * r * Math.cos(0.03*theta);
+			anneauS2.position.z = 2.8 * r * Math.sin(0.03*theta);
+			anneauS3.position.x = 2.8 * r * Math.cos(0.03*theta);
+			anneauS3.position.z = 2.8 * r * Math.sin(0.03*theta);
+			anneauS4.position.x = 2.8 * r * Math.cos(0.03*theta);
+			anneauS4.position.z = 2.8 * r * Math.sin(0.03*theta);
+			uranus.position.x = 3.6 * r * Math.cos(0.01*theta);
+			uranus.position.z = 3.6 * r * Math.sin(0.01*theta);
+			neptune.position.x = 4 * r * Math.cos(0.006*theta);
+			neptune.position.z = 4 * r * Math.sin(0.006*theta);
+			
+
+			// partie caméra
+			const delta = clock.getDelta();
+			if (controls) controls.update(delta);
+
+		}
+
+	</script>
+
+</body>
+
+</html>

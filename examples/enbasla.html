@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+
+    <script type="text/javascript">
+        document.onkeypress = function (e) {
+            e = e || window.event;
+            var key = e.which ? e.which : event.keyCode;
+            if (key == 32) alert('Frappe de la touche espace !');
+            else alert('Frappe de la touche de code ' + key)
+        }
+    </script>
+    
+</body>
+
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+	<title>TP3 - Groupe Reda, Pierre, Nathanaël, Arthur</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link type="text/css" rel="stylesheet" href="main.css">
+</head>
+
+<body>
+
+	<div id="info">
+		<a href="https://threejs.org" target="_blank" rel="noopener">TP3 - Groupe Reda, Pierre, Nathanaël, Arthur<br />
+	</div>
+
+
+	<script type="module">
+
+
+		// IMPORTS
+		import * as THREE from '../build/three.module.js';
+		import { GUI } from './jsm/libs/dat.gui.module.js';
+		import { OrbitControls } from './jsm/controls/OrbitControls.js';
+		import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+		import { AnimationMixer } from '../src/animation/AnimationMixer.js';
+
+
+		// VARIABLES
+		let renderer, scene, camera;
+		let spotLight, lightHelper, shadowCameraHelper;
+		let gui;
+		let combat, abdos, burpees, fight;
+		let mixerCbt, mixerAbd, mixerBrp, mixerFgt;
+		let deltaCbt, deltaAbd, deltaBrp, deltaFgt;
+
+
+		init();
+		animate();
+		buildGui();
+
+
+		// DÉBUT FONCTION INIT
+		function init() {
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			document.body.appendChild(renderer.domElement);
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			renderer.outputEncoding = THREE.sRGBEncoding;
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 1000);
+			camera.position.set(30, 200, 200);
+
+
+			// ORBIT CONTROL
+			const controls = new OrbitControls(camera, renderer.domElement);
+			controls.addEventListener('change', render);
+			controls.minDistance = 20;
+			controls.maxDistance = 500;
+			controls.enablePan = false;
+
+
+			// MUSIQUE
+			const listener = new THREE.AudioListener();
+			camera.add(listener);
+			const sound = new THREE.Audio(listener);
+			const audioLoader = new THREE.AudioLoader();
+
+			audioLoader.load('sounds/streetfighter.ogg', function (buffer) {
+				sound.setBuffer(buffer);
+				sound.setLoop(true);
+				sound.setVolume(0.5);
+			});
+
+
+			// LUMIÈRE AMBIANTE
+			const ambient = new THREE.AmbientLight(0xffffff, 0.1);
+			scene.add(ambient);
+
+
+			// DÉBUT PARTIE SPOTLIGHT
+			spotLight = new THREE.SpotLight(0xffffff, 1);
+			spotLight.position.set(15, 40, 35);
+			spotLight.angle = Math.PI / 4;
+			spotLight.penumbra = 0.1;
+			spotLight.decay = 2;
+			spotLight.distance = 200;
+			spotLight.castShadow = true;
+			spotLight.shadow.mapSize.width = 512;
+			spotLight.shadow.mapSize.height = 512;
+			spotLight.shadow.camera.near = 10;
+			spotLight.shadow.camera.far = 200;
+			spotLight.shadow.focus = 1;
+			scene.add(spotLight);
+
+			lightHelper = new THREE.SpotLightHelper(spotLight);
+			shadowCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
+			// FIN PARTIE SPOTLIGHT
+
+
+			// DÉBUT PARTIE PLATEFORME
+			let textureSol = new THREE.TextureLoader().load('textures/8k_mercury.jpg');
+			let material = new THREE.MeshPhongMaterial({ map: textureSol, side: THREE.DoubleSide });
+			let geometry = new THREE.BoxGeometry(2000, 2000, 2, 10, 10, 10); // Données de la plateforme
+			let plateforme = new THREE.Mesh(geometry, material); // liaison taille/texture (met en forme les deux)
+
+			plateforme.position.set(0, -1, 0); // Positionnement de la plateforme
+			plateforme.rotation.x = - Math.PI * 0.5; // Rotation de la plateforme
+			plateforme.receiveShadow = true; // Permet de recevoir l'ombre
+			scene.add(plateforme); //Ajout de la plateforme
+			// FIN PARTIE PLATEFORME
+
+
+			// INITIALISATION DU GLTF
+			const loader = new GLTFLoader();
+
+
+			// DÉBUT MODEL GLTF N°1
+			loader.load('./models/combat/alienvsblackpanther.gltf', function (gltf) {
+
+				combat = gltf.scene; // Scène du GLTF
+				combat.scale.set(10, 10, 10); // Définit la taille de l'objet 3d
+				scene.add(combat); //Ajout de l'objet 3d
+				combat.position.set(0, 0, -25); // Coordonnées de l'objet 3d
+
+				// OMBRAGE
+				combat.traverse(function (node) {
+					if (node.isMesh || node.isLight) node.castShadow = true; //Si node défini, alors node diffuse l'ombre
+					if (node.isMesh || node.isLight) node.receiveShadow = true;// Si node défini, alors node reçoit l'ombre
+				});
+
+				// ANIMATION
+				document.onkeypress = function (e) {
+					e = e || window.event;
+					let key = e.which ? e.which : event.keyCode;
+
+					if (!mixerCbt) mixerCbt = new AnimationMixer(combat);
+
+					switch (key) {
+
+						case 97: // A
+							sound.play();
+							for (const clip of gltf.animations) {
+								mixerCbt.clipAction(clip).play();
+								console.log(mixerCbt.clipAction(clip).play()); // LANCE L'ANIMATION
+							}
+							break;
+
+						case 113: // Q
+							sound.play();
+							gltf.animations.forEach((clip) => {
+								mixerCbt.clipAction(clip).paused = false;
+								console.log(mixerCbt.clipAction(clip).paused); // REPREND L'ANIMATION
+							});
+							break;
+
+						case 119: // W
+							sound.pause();
+							gltf.animations.forEach((clip) => {
+								mixerCbt.clipAction(clip).paused = true;
+								console.log(mixerCbt.clipAction(clip).paused); // MET PAUSE L'ANIMATION
+							});
+							break;
+					}
+				}
+
+			});
+			// FIN MODEL GLTF N°1
+
+
+			// DÉBUT MODEL GLTF N°2
+			loader.load('./models/abdos/abdos.gltf', function (gltf) {
+
+				abdos = gltf.scene; // Scène du GLTF
+				abdos.scale.set(10, 10, 10); // Définit la taille de l'objet 3d
+				scene.add(abdos); // Ajout de l'objet 3d
+				abdos.position.set(10, 0, 15); // Coordonnées de l'objet 3d
+
+				// OMBRAGE
+				abdos.traverse(function (node) {
+					if (node.isMesh || node.isLight) node.castShadow = true; // Si node défini, alors node diffuse l'ombre
+					if (node.isMesh || node.isLight) node.receiveShadow = true;// Si node défini, alors node reçoit l'ombre
+				});
+
+				//ANIMATION
+				mixerAbd = new AnimationMixer(abdos);
+				gltf.animations.forEach((clip) => {
+					mixerAbd.clipAction(clip).play();
+				});
+
+			});
+			// FIN MODEL GLTF N°2
+
+
+			// DÉBUT MODEL GLTF N°3
+			loader.load('./models/burpees/burpees.gltf', function (gltf) {
+
+				burpees = gltf.scene; // Scène du GLTF
+				burpees.scale.set(10, 10, 10); // Définit la taille de l'objet 3d
+				scene.add(burpees); // Ajout de l'objet 3d
+				burpees.position.set(-10, 0, 15); // Coordonnées de l'objet 3d
+
+				// OMBRAGE
+				burpees.traverse(function (node) {
+					if (node.isMesh || node.isLight) node.castShadow = true; // Si node défini, alors node diffuse l'ombre
+					if (node.isMesh || node.isLight) node.receiveShadow = true; // Si node défini, alors node reçoit l'ombre
+				});
+
+				// ANIMATION
+				mixerBrp = new AnimationMixer(burpees);
+				gltf.animations.forEach((clip) => {
+					mixerBrp.clipAction(clip).play();
+				});
+
+			});
+			// FIN MODEL GLTF N°3
+
+
+			// DÉBUT MODEL GLTF N°4
+			loader.load('./models/fight/Final.gltf', function (gltf) {
+
+				fight = gltf.scene; // Scène du GLTF
+				fight.scale.set(10, 10, 10); // Définit la taille de l'objet 3d
+				scene.add(fight); // Ajout de l'objet 3d
+				fight.position.set(-50, 0, -35); // Coordonnées de l'objet 3d
+
+				// OMBRAGE
+				fight.traverse(function (node) {
+					if (node.isMesh || node.isLight) node.castShadow = true; // Si node défini, alors node diffuse l'ombre
+					if (node.isMesh || node.isLight) node.receiveShadow = true; // Si node défini, alors node reçoit l'ombre
+				});
+
+				// ANIMATION
+				mixerFgt = new AnimationMixer(fight);
+				gltf.animations.forEach((clip) => {
+					mixerFgt.clipAction(clip).play();
+				});
+
+			});
+			// FIN MODEL GLTF N°4
+
+
+			render();
+
+			window.addEventListener('resize', onWindowResize);
+
+		}
+		// FIN FONCTION INIT
+
+
+		function onWindowResize() {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		}
+
+
+		function render() {
+			lightHelper.update();
+			shadowCameraHelper.update();
+			renderer.render(scene, camera);
+		}
+
+
+		// DÉBUT FONCTION BUILDGUI
+		function buildGui() {
+
+			gui = new GUI(); // Création du GUI
+			const params = { // Listage des paramètres
+				'RGB lumière': spotLight.color.getHex(),
+				intensity: spotLight.intensity,
+				distance: spotLight.distance,
+				angle: spotLight.angle,
+				position: spotLight.position.z,
+				penumbra: spotLight.penumbra,
+				decay: spotLight.decay,
+				focus: spotLight.shadow.focus,
+				helper: false
+			};
+
+
+			// Modifie le Helper
+			gui.add(params, 'helper', 0, 1).onChange(function (helper) {
+
+				if (helper == true) {
+					scene.add(lightHelper); // blanc
+					scene.add(shadowCameraHelper); // jaune et rouge
+				} else {
+					scene.remove(lightHelper); // blanc
+					scene.remove(shadowCameraHelper); // jaune et rouge
+				}
+
+				render();
+			});
+
+
+			// Modifie l'intensité de la lumière
+			gui.add(params, 'intensity', 0, 2).onChange(function (val) {
+				spotLight.intensity = val;
+				render();
+			});
+
+
+			// Modifie la position de la lumière sur l'objet
+			gui.add(params, 'position', -100, 100).onChange(function (val) {
+				spotLight.position.z = val;
+				render();
+			});
+
+
+			// Modifie la distance de la lumière
+			gui.add(params, 'distance', 50, 200).onChange(function (val) {
+				spotLight.distance = val;
+				render();
+			});
+
+
+			// Modifie l'angle de la lumière
+			gui.add(params, 'angle', 0, Math.PI / 3).onChange(function (val) {
+				spotLight.angle = val;
+				render();
+			});
+
+
+			// Modifie la pénombre
+			gui.add(params, 'penumbra', 0, 1).onChange(function (val) {
+				spotLight.penumbra = val;
+				render();
+			});
+
+
+			// Modifie l'ombrage de la lumière
+			gui.add(params, 'decay', 1, 2).onChange(function (val) {
+				spotLight.decay = val;
+				render();
+			});
+
+
+			// Modifie le focus sur l'ombre
+			gui.add(params, 'focus', 0, 1).onChange(function (val) {
+				spotLight.shadow.focus = val;
+				render();
+			});
+
+
+			// Modifie la couleur
+			gui.addColor(params, 'RGB lumière').onChange(function (val) {
+				spotLight.color.setHex(val);
+				render();
+			});
+
+
+			gui.close(); // ferme par défaut le menu
+
+		}
+		// FIN FONCTION BUILDGUI
+
+
+		function animate() {
+
+			requestAnimationFrame(animate);
+
+			var deltaCbt = 0.02;
+			var deltaAbd = 0.02;
+			var deltaBrp = 0.02;
+			var deltaFgt = 0.02;
+
+			if (mixerCbt) mixerCbt.update(deltaCbt);
+			if (mixerAbd) mixerAbd.update(deltaAbd);
+			if (mixerBrp) mixerBrp.update(deltaBrp);
+			if (mixerFgt) mixerFgt.update(deltaFgt);
+
+			renderer.render(scene, camera);
+
+		};
+
+	</script>
+
+</body>
+
+</html>
